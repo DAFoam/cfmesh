@@ -610,7 +610,9 @@ Foam::Module::boundaryLayers::boundaryLayers
     otherVrts_(),
     patchKey_(),
     nPoints_(mesh.points().size()),
-    geometryAnalysed_(false)
+    geometryAnalysed_(false),
+    blHeightFactor_(0.5),
+    blMinHeight_(0.0)
 {
     const PtrList<boundaryPatch>& boundaries = mesh_.boundaries();
     patchNames_.setSize(boundaries.size());
@@ -625,6 +627,30 @@ Foam::Module::boundaryLayers::boundaryLayers
     treatedPatch_ = false;
 
     treatPatchesWithPatch_.setSize(boundaries.size());
+
+    // read boundary layer settings from meshDict if available
+    IOdictionary meshDict
+    (
+        IOobject
+        (
+            "meshDict",
+            mesh_.returnTime().system(),
+            mesh_.returnTime(),
+            IOobject::READ_IF_PRESENT,
+            IOobject::NO_WRITE
+        )
+    );
+
+    if (meshDict.isDict("boundaryLayers"))
+    {
+        const dictionary& blDict = meshDict.subDict("boundaryLayers");
+
+        blDict.readIfPresent("boundaryLayerHeightFactor", blHeightFactor_);
+        blDict.readIfPresent("boundaryLayerMinHeight", blMinHeight_);
+    }
+
+    Info<< "Boundary layer height factor: " << blHeightFactor_ << endl;
+    Info<< "Boundary layer min height: " << blMinHeight_ << endl;
 }
 
 

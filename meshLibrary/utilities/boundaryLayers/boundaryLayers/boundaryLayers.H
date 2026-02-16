@@ -111,6 +111,14 @@ class boundaryLayers
         //- has the geometry been analysed
         bool geometryAnalysed_;
 
+        //- scaling factor for the boundary layer height
+        //- default is 0.5 (half the distance to the nearest neighbor)
+        scalar blHeightFactor_;
+
+        //- minimum boundary layer height (absolute, in mesh units)
+        //- default is 0 (no minimum enforced)
+        scalar blMinHeight_;
+
 
     // Private member functions
 
