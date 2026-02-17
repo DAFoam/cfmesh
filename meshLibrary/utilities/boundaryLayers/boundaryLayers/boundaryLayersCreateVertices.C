@@ -188,13 +188,11 @@ Foam::point Foam::Module::boundaryLayers::createNewVertex
                 }
 
                 const vector vec = points[bPoints[pointPoints(bpI, ppI)]] - p;
-                // Use full distance like regular surface vertices
-                // instead of just the projected component
-                const scalar d = blHeightFactor_*mag(vec);
+                const scalar prod = blHeightFactor_*mag(vec & normal);
 
-                if (d < dist)
+                if (prod < dist)
                 {
-                    dist = d;
+                    dist = prod;
                 }
             }
         }
@@ -606,17 +604,9 @@ void Foam::Module::boundaryLayers::createNewVertices
         {
             // point is located at an extrusion edge
             // create the new position for the existing point
-            vector displacement =
-                newPatchPenetrationVector[0] + newPatchPenetrationVector[1];
-
-            // enforce minimum BL height on the combined displacement
-            const scalar dispMag = mag(displacement);
-            if (dispMag > VSMALL && dispMag < blMinHeight_)
-            {
-                displacement *= blMinHeight_/dispMag;
-            }
-
-            point newP = p + displacement;
+            point newP(p);
+            newP += newPatchPenetrationVector[0];
+            newP += newPatchPenetrationVector[1];
 
             if (!help::isnan(newP) && !help::isinf(newP))
             {
@@ -633,24 +623,15 @@ void Foam::Module::boundaryLayers::createNewVertices
         {
             // point is located at an extrusion corner
             // create 3 points and the new position for the existing point
-            vector cornerDisp(vector::zero);
+            point newP(p);
             for (label i = 0; i < 3; ++i)
             {
-                cornerDisp += newPatchPenetrationVector[i];
+                newP += newPatchPenetrationVector[i];
                 for (label j = i + 1; j < 3; ++j)
                 {
-                    vector edgeDisp =
-                        newPatchPenetrationVector[i] +
+                    const point np =
+                        p + newPatchPenetrationVector[i] +
                         newPatchPenetrationVector[j];
-
-                    // enforce minimum BL height on edge displacement
-                    const scalar edgeMag = mag(edgeDisp);
-                    if (edgeMag > VSMALL && edgeMag < blMinHeight_)
-                    {
-                        edgeDisp *= blMinHeight_/edgeMag;
-                    }
-
-                    const point np = p + edgeDisp;
 
                     if (!help::isnan(np) && !help::isinf(np))
                     {
@@ -673,15 +654,7 @@ void Foam::Module::boundaryLayers::createNewVertices
                 }
             }
 
-            // enforce minimum BL height on corner displacement
-            const scalar cornerMag = mag(cornerDisp);
-            if (cornerMag > VSMALL && cornerMag < blMinHeight_)
-            {
-                cornerDisp *= blMinHeight_/cornerMag;
-            }
-
             // create new position for the existing point
-            point newP = p + cornerDisp;
             if (!help::isnan(newP) && !help::isinf(newP))
             {
                 points.append(newP);
